@@ -1,4 +1,5 @@
-subfiles/Speech Models/
+subfiles/Speech Models/vosk-model-en-us-0.22/
+subfiles/Speech Models/vosk-model-small-en-us-0.15/
 build/
 dist/
 test.py
