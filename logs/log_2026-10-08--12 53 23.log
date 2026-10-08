@@ -1,0 +1,7 @@
+[2026-10-08 12:53:31] [System] Initializing...[2026-10-08 12:53:32] 
+[2026-10-08 12:53:32] [System] Loading Vosk model...[2026-10-08 12:53:32] 
+[2026-10-08 12:53:32] [System] TTS worker started...[2026-10-08 12:53:32] 
+[2026-10-08 12:53:32] Controllers: [2026-10-08 12:53:32]  [2026-10-08 12:53:32] 0[2026-10-08 12:53:32] 
+[2026-10-08 12:53:32] [System] Vosk Model ready![2026-10-08 12:53:32] 
+[2026-10-08 12:53:32] [Error] Audio mixer initialization failed: WASAPI can't find requested audio endpoint: Element not found.[2026-10-08 12:53:32] 
+[2026-10-08 12:53:39] [System] Quitting...

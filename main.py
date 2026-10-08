@@ -1,14 +1,4 @@
-import psutil
-import os
 
-current_pid = os.getpid()
-python_processes = [p for p in psutil.process_iter(['pid', 'name']) if p.info['name'] and 'python' in p.info['name'].lower()]
-
-if len(python_processes) > 1:
-    for proc in python_processes:
-        if proc.info['pid'] != current_pid:
-            proc.kill()
-            
 # Imports
 from pystray import Icon, Menu, MenuItem
 from vosk import Model, KaldiRecognizer
@@ -22,16 +12,36 @@ import pyautogui as g
 import tkinter as tk
 import pyaudio as au
 import subprocess
+import traceback
 import threading
 import tempfile
 import logging
 import pickle
 import pygame
 import random
+import psutil
 import queue
 import time
 import json
 import sys
+import os
+
+current_pid = os.getpid()
+python_processes = [p for p in psutil.process_iter(['pid', 'name']) if p.info['name'] and 'python' in p.info['name'].lower()]
+
+if len(python_processes) > 1:
+    for proc in python_processes:
+        if proc.info['pid'] != current_pid:
+            proc.kill()
+
+def log_uncaught_exceptions(exctype, value, tb):
+    error_msg = "".join(traceback.format_exception(exctype, value, tb))
+    # Write to your log file or logger
+    with open("crash.log", "a", encoding="utf-8") as f:
+        f.write("=== CRASH DETECTED ===\n")
+        f.write(error_msg + "\n")
+    sys.__excepthook__(exctype, value, tb)
+
 
 
 
@@ -41,6 +51,7 @@ import sys
 #Event flags
 model_ready = threading.Event()
 settings_ready = threading.Event()
+speaker_ready = threading.Event()
 mars_speaking=threading.Event()
 
 # Controller IDs
@@ -50,9 +61,11 @@ DUALSENSE_PRODUCT_IDS = [0xCE6, 0xDF2]
 # Paths
 STEAM_PATH = r"D:\Programs\Steam\steam.exe"
 MODEL_PATH = r"D:\Useful\Speech Model\vosk-model-small-en-us-0.15"
+LOG_PATH = r"logs/"
 
 # Other Variables
 settings={}
+logfilename = "logs/log_" + time.strftime("%Y-%m-%d--%H %M %S") + ".log"
 
 # Vosk setup
 model = None
@@ -80,6 +93,15 @@ num_dict_ones = {"zero":0,"one":1,"two":2,"three":3,"four":4,"five":5,"six":6,"s
 
 num_dict_tens = {"twenty":20,"thirty":30,"forty":40,"fifty":50,"sixty":60,"seventy":70,"eighty":80,"ninety":90,}
 
+open(logfilename, "w").close()
+
+def log(message):
+    if not message:
+        return
+    timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+    log_entry = f"[{timestamp}] {message}"
+    with open(logfilename, "a") as log_file:
+        log_file.write(log_entry)
 
 def convertToNum(sentence):
     
@@ -182,6 +204,11 @@ def _controller_worker():
         time.sleep(1)
 
 def playAudio(fname, volume=None):
+    print(f"[System] Playing audio: {fname}")
+    if not speaker_ready.is_set():
+        print("[Error] Sound output not initialized, cannot play audio.")
+        return
+    
     mars_speaking.set()
 
     if settings.get("current_output_device") is None:
@@ -227,7 +254,6 @@ def speak(text, volume=None):
 
     
     tts_queue.put((text, vol))
-
 
 def _tts_worker():
    
@@ -294,22 +320,34 @@ def _load_stuff():
     model_ready.clear()
     settings=pickle.load(open("subfiles/settings.dat", "rb"))
     settings_ready.set()
+    
+    
     print("[System] Loading Vosk model...")
     model_ready.clear()
     model = Model(MODEL_PATH)
     recognizer = KaldiRecognizer(model, RATE)
     print("[System] Vosk Model ready!")
     model_ready.set()  
+      
+    
+    try:
+       mixer.init()
+       speaker_ready.set()
+       print("[System] Audio mixer initialized!")
+    except Exception as e:
+        print(f"[Error] Audio mixer initialization failed: {e}")
+        speaker_ready.clear()
 
-    mixer.init()
-    print("[System] Audio mixer initialized!")
+    
 
 # --- Tray icon ---
 def build_tray(root):
     def show(icon, item): root.after(0, root.deiconify)
     #def show_settings(icon, item): root.after(0, lambda: open_settings(root));show(icon, item)
+    
     def quit_app(icon, item):
         print("[System] Quitting...")
+        log("[System] Quitting...")
         icon.stop()
         root.after(0, root.destroy)
 
@@ -333,6 +371,7 @@ def main():
     def poll():
         while not log_queue.empty():
             msg = log_queue.get_nowait()
+            log(msg)
             at_bottom = text.yview()[1] >= 0.99
             text.configure(state="normal")
             if msg.split():
@@ -382,17 +421,12 @@ def main():
 
     
     sys.stdout = FakeConsole(log_queue)
-   
-    
     sys.stderr = FakeConsole(log_queue)
+    sys.excepthook = log_uncaught_exceptions
   
     
     
     root.protocol("WM_DELETE_WINDOW", root.withdraw)
-
-  
-    
-
 
     
     icon = build_tray(root)
@@ -422,6 +456,7 @@ def main():
 
     poll()
     root.mainloop()
+   
 
 
 if __name__ == "__main__":
