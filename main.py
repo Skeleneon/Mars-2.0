@@ -1,5 +1,15 @@
+import psutil
+import os
+
+current_pid = os.getpid()
+python_processes = [p for p in psutil.process_iter(['pid', 'name']) if p.info['name'] and 'python' in p.info['name'].lower()]
+
+if len(python_processes) > 1:
+    for proc in python_processes:
+        if proc.info['pid'] != current_pid:
+            proc.kill()
+            
 # Imports
-from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
 from pystray import Icon, Menu, MenuItem
 from vosk import Model, KaldiRecognizer
 from pydualsense import pydualsense
@@ -14,18 +24,17 @@ import pyaudio as au
 import subprocess
 import threading
 import tempfile
-import comtypes
 import logging
-import ctypes
 import pickle
 import pygame
-import psutil
 import random
 import queue
 import time
 import json
 import sys
-import os
+
+
+
 
 
 

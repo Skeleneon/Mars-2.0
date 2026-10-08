@@ -6,7 +6,7 @@ a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[
-('subfiles/hidapi.dll', '.'),
+(r"C:\Users\amans\Documents\My Projects\Python Programs\VA 3.0\subfiles\hidapi.dll",'.'),
 (r'C:\Users\amans\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\vosk', 'vosk'),
 ],
     datas=[('assets', 'assets')],
