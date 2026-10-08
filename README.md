@@ -41,9 +41,9 @@ Download the Vosk model and extract it into the project folder in /subfiles/Spee
 Run from the project root so relative asset paths to resolve correctly
 You can also build using Pyinstaller by running to create a native executable
 
-'''bash
+```bash
 pyinstaller --clean main.spec
-'''
+```
 
 
 ## Project Structure
